@@ -7,7 +7,7 @@
 
 ## 🖱️ How to View
 
-1. Go to [hosted website](https://ashikaanand12.github.io/mandelbrotSet/)
+1. Go to [hosted website](https://ashikaanand12.github.io/mandelbrotSet/) : https://ashikaanand12.github.io/mandelbrotSet/ 
    
 ## 🚀 Technologies Used
 
