@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ashika Anand Babu | Mandelbrot Set Explorer</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 36px 0;
+                background: #1C1F2C;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #fff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            h1, h2 {
+                color: #F8C800;
+                font-weight: 700;
+                margin-bottom: 6px;
+                letter-spacing: 0.1px;
+            }
+            .flexrow {
+                display: flex;
+                flex-direction: row;
+                gap: 38px;
+                justify-content: center;
+                align-items: flex-start;
+            }
+            .info {
+                min-width: 265px;
+                max-width: 390px;
+                background: #393C47;
+                color: #fff;
+                border-left: 5px solid #F8C800;
+                border-radius: 10px;
+                padding: 26px 22px 16px 26px;
+                font-size: 1.05rem;
+                line-height: 1.65;
+                box-shadow: 0 2px 18px #0003;
+                letter-spacing: 0.02em;
+            }
+            .controls {
+                margin: 30px 0 14px 0;
+                padding: 14px;
+                background: #232534;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px #0002;
+                color: #fff;
+                font-size: 1.05rem;
+            }
+            .controls button {
+                background: #F8C800;
+                border: none;
+                margin: 10px;
+                padding: 14px;
+                color: #1C1F2C;
+                font-weight: 650;
+                border-radius: 5px;
+                font-size: 1em;
+                cursor: pointer;
+                box-shadow: 0 1px 2px #0002;
+                transition: background 0.15s;
+            }
+            canvas {
+                border: 1px solid #333;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+                background-color: black;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Ashika Anand Babu | Nclusion Frontend SWE Take Home Interview | FE-001-MB <h1>
+            <div class="flexrow">
+            <div class="info">
+                <h2>Mandelbrot Set Explorer</h2>
+                <p>Technologies used: HTML, CSS, Vanilla JS and Canvas</p>
+                <p>Visualizing z<sub>n+1</sub> = z<sub>n</sub><sup>2</sup> + c where z<sub>0</sub> = 0</p>
+                <p>Light colors: sequence remains bounded | Dark colors: sequence grows unbounded</p>
+                <p>Canvas size (fixed at 600x600) which is > (500x500)</p>
+                <p> Complex plain boundaries: [-2,-2] to [2,2]</p>
+            </div>
+            <!-- Canvas size -->
+            <canvas id="canvas" width="600" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <button id="zoomIn">Zoom In</button>
+                <button id="zoomOut">Zoom Out</button>
+                <button id="reset">Reset View</button>
+                <br>
+                <label for="iterations">Max Iterations: </label>
+                <input type="range" id="iterations" min="50" max="300" value="100" step="25">
+                <span id="iterationValue">100</span>
+            </div>
+        </div>
+
+        <script>
+            // Waiting for the page to load
+            document.addEventListener('DOMContentLoaded', function() {
+                // Set up canvas
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Canvas size at 600x600
+                const WIDTH = 600;
+                const HEIGHT = 600;
+
+                // Complex plane boundaries
+                let planeMin = -2;    // Leftmost real number and bottom imaginary number
+                let planeMax = 2;     // Rightmost real number and top imaginary number   
+
+                let maxIterations = 100;
+
+                // Check if a complex number c is in the Mandelbrot set
+                function isInMandelbrotSet(cReal, cImag) {
+                    let realNum = 0;      // Real part of z (starts at 0)
+                    let imgNum = 0;      // Imaginary part of z (also starts at 0)
+                    let iteration = 0;  
+
+                    // Keep iterating until z gets too big or we hit max iterations
+                    while (iteration < maxIterations) {
+                        // Calculate |z|² = realNum² + imgNum²
+                        const zSquared = (realNum * realNum) + (imgNum * imgNum);
+
+                        // If magnitude > 4, the sequence has become infinity
+                        if (zSquared > 4) {
+                            return iteration; // Return how many iterations it took to escape
+                        }
+
+                        // Calculating next z value: z_{n+1} = z_n² + c
+                        const newRealNum = realNum * realNum - imgNum * imgNum + cReal;
+                        const newImagNum = (2 * realNum * imgNum) + cImag;
+
+                        realNum = newRealNum;
+                        imgNum = newImagNum;
+                        iteration++;
+                    }
+
+                    // If while loop reached here, magnitude is < 4 and  it's in the set
+                    return maxIterations;
+                }
+
+                // Convert a value from one range to another
+                function mapValue(value, fromMin, fromMax, toMin, toMax) {
+                    return (value - fromMin) * (toMax - toMin) / (fromMax - fromMin) + toMin;
+                }
+
+                // Get color based on how many iterations it took to escape
+                function getColor(iterations) {
+                    if (iterations === maxIterations) {
+                        // Point is in the set - set light color
+                        return [240, 240, 240]; // Light gray
+                    } else {
+                        // Point escaped - create a color based on iteration count
+                        const ratio = iterations / maxIterations;
+
+                        // Color scheme: darker = escaped faster
+                        const brightness = Math.floor(255 * ratio);
+                        return [brightness, brightness * 0.8, brightness * 0.6];
+                    }
+                }
+
+                // Drawing Mandelbrot set
+                function drawMandelbrot() {
+                    
+                    // Show loading message
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, WIDTH, HEIGHT); // initial loading background
+                    ctx.fillStyle = 'black';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Rendering...', WIDTH/2, HEIGHT/2);
+
+                    // Use setTimeout to let the loading message show
+                    setTimeout(() => {
+                        // Create image data to manipulate pixels directly
+                        const imageData = ctx.createImageData(WIDTH, HEIGHT);
+                        const pixels = imageData.data;
+
+                        // Go through every pixel on the canvas
+                        for (let y = 0; y < HEIGHT; y++) {
+                            for (let x = 0; x < WIDTH; x++) {
+                                // Convert pixel coordinates to complex number
+                                const cReal = mapValue(x, 0, WIDTH, planeMin, planeMax);
+                                const cImag = mapValue(y, 0, HEIGHT, planeMin, planeMax);
+
+                                // Check if this complex number is in the Mandelbrot set
+                                const iterations = isInMandelbrotSet(cReal, cImag);
+
+                                // Get color for this point
+                                const color = getColor(iterations);
+
+                                // Set pixel color in image data
+                                const pixelIndex = (y * WIDTH + x) * 4; // Each pixel has 4 values (RGBA)
+                                pixels[pixelIndex] = color[0];           // Red
+                                pixels[pixelIndex + 1] = color[1];       // Green  
+                                pixels[pixelIndex + 2] = color[2];       // Blue
+                                pixels[pixelIndex + 3] = 255;            // Alpha/Opaque
+                            }
+                        }
+
+                        // Draw image to canvas
+                        ctx.putImageData(imageData, 0, 0);
+                    }, 50);
+                }
+
+                // Initial drawing
+                drawMandelbrot();
+
+                // Zoom in button
+                document.getElementById('zoomIn').addEventListener('click', function() {
+                    const center = (planeMin + planeMax) / 2;  // Find center of current view
+                    const newDimension = (planeMax - planeMin) * 0.5;   // Make view half as wide and half as tall
+
+                    // Update boundaries around the center
+                    planeMin = center - newDimension / 2;
+                    planeMax = center + newDimension / 2;
+
+                    drawMandelbrot();
+                });
+
+                // Zoom out button
+                document.getElementById('zoomOut').addEventListener('click', function() {
+                    const center = (planeMin + planeMax) / 2;  // Find center of current view
+                    const newDimension = (planeMax - planeMin) * 2;     // Make view twice as wide and twice as tall
+
+                    // Update boundaries around the center
+                    planeMin = center - newDimension / 2;
+                    planeMax = center + newDimension / 2;
+
+                    drawMandelbrot();
+                });
+
+                // Reset to original view
+                document.getElementById('reset').addEventListener('click', function() {
+                    planeMin = -2;
+                    planeMax = 2;
+                    drawMandelbrot();
+                });
+
+                // Handle iterations slider
+                const iterationsSlider = document.getElementById('iterations');
+                const iterationValue = document.getElementById('iterationValue');
+
+                // Update display when slider moves
+                iterationsSlider.addEventListener('input', function() {
+                    maxIterations = parseInt(this.value);
+                    iterationValue.textContent = maxIterations;
+                });
+
+                // Redraw when slider released
+                iterationsSlider.addEventListener('change', function() {
+                    drawMandelbrot();
+                });
+            });
+        </script>
+    </body>
+</html>
